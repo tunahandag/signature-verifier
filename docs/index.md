@@ -23,7 +23,7 @@ Emit an event when a signature is verified
 ### SignatureAlreadyUsed
 
 ```solidity
-error SignatureAlreadyUsed()
+error SignatureAlreadyUsed(bytes signature)
 ```
 
 Error definitions
@@ -31,13 +31,19 @@ Error definitions
 ### InvalidSigner
 
 ```solidity
-error InvalidSigner()
+error InvalidSigner(address recovered, address expected)
 ```
 
 ### SignatureExpired
 
 ```solidity
-error SignatureExpired()
+error SignatureExpired(uint256 expirationTime)
+```
+
+### InvalidNonce
+
+```solidity
+error InvalidNonce(uint256 expected, uint256 actual)
 ```
 
 ### constructor
