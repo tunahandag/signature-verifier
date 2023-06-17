@@ -27,9 +27,10 @@ contract SignatureVerifier is EIP712 {
 	event SignatureVerified(uint256 id, uint256 timestamp, address buyer);
 
 	/// Error definitions
-	error SignatureAlreadyUsed();
-	error InvalidSigner();
-	error SignatureExpired();
+	error SignatureAlreadyUsed(bytes signature);
+	error InvalidSigner(address recovered, address expected);
+	error SignatureExpired(uint256 expirationTime);
+	error InvalidNonce(uint256 expected, uint256 actual);
 
 	/**
 	 * @notice Constructor
@@ -45,8 +46,10 @@ contract SignatureVerifier is EIP712 {
 	 * @param _signature the signature of the buy method
 	 */
 	function verifySignature(MethodTypes.BuyType memory _buyType, bytes memory _signature) public {
-		if (usedSignatures[_signature]) revert SignatureAlreadyUsed();
-		if (_buyType.timestamp < block.timestamp) revert SignatureExpired();
+		if (usedSignatures[_signature]) revert SignatureAlreadyUsed(_signature);
+		if (_buyType.timestamp < block.timestamp) revert SignatureExpired(_buyType.timestamp);
+		if (_buyType.nonce != nonces[_buyType.buyer])
+			revert InvalidNonce(_buyType.nonce, nonces[_buyType.buyer]);
 
 		bytes32 digest = _hashTypedDataV4(
 			keccak256(
@@ -60,7 +63,8 @@ contract SignatureVerifier is EIP712 {
 			)
 		);
 		address recoveredAddress = ECDSA.recover(digest, _signature);
-		if (recoveredAddress != _buyType.buyer) revert InvalidSigner();
+		if (recoveredAddress != _buyType.buyer)
+			revert InvalidSigner(recoveredAddress, _buyType.buyer);
 
 		usedSignatures[_signature] = true;
 		nonces[_buyType.buyer]++;
